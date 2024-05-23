@@ -1,0 +1,18 @@
+{
+  "_comment" : "Configuration for Hub - hubConfig.json - laravel",
+  "host": "0.0.0.0",
+  "maxSession": 100,
+  "port": 4444,
+  "cleanupCycle": 5000,
+  "timeout": 600,
+  "newSessionWaitTimeout": -1,
+  "servlets": [],
+  "prioritizer": null,
+  "capabilityMatcher": "org.openqa.grid.internal.utils.DefaultCapabilityMatcher",
+  "throwOnCapabilityNotPresent": true,
+  "nodePolling": 180000,
+  "platform": "LINUX",
+  "debug": true,
+  "log": "/var/www/app_prod/selenium/log_hub"
+}
+

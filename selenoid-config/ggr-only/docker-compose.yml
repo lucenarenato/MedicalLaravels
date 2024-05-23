@@ -1,0 +1,40 @@
+####
+# ATENTION:
+# Replace all occurences of sandbox with your project's name
+####
+
+# v2 syntax
+version: '3'
+services:
+  ggr:
+    container_name: ggr
+    network_mode: bridge
+    volumes:
+      - "./grid-router/:/etc/grid-router"
+    image: aerokube/ggr:latest-release
+    ports:
+      - "4444:4444"
+
+  ggr-ui:
+    container_name: ggr-ui
+    network_mode: bridge
+    volumes:
+      - "./grid-router/:/etc/grid-router"
+    image: aerokube/ggr-ui:latest-release
+      - ggr
+    links:
+      - selenoid
+    ports:
+      - "8888:8888"
+
+  selenoid-ui:
+    container_name: selenoid-ui
+    network_mode: bridge
+    image: aerokube/selenoid-ui:latest-release
+      - ggr
+      - ggr-ui
+    links: 
+      - ggr-ui
+    command: ["--selenoid-uri", "http://ggr-ui:8888"]
+    ports:
+      - "8080:8080"

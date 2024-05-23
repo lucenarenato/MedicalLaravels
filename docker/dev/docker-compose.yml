@@ -1,0 +1,142 @@
+version: "3"
+# Named volumes
+volumes:
+
+  # MySQL Data
+  laravel-mysql-data:
+    driver: local
+
+services:
+  db:
+    image: mysql:5.7
+    user: root
+    command: --default-authentication-plugin=mysql_native_password
+    container_name: laravel-mysql
+    volumes:
+      - laravel-mysql-data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+
+  nginx:
+    container_name: nginx
+    image: nginx:stable
+    user: root
+    ports:
+        - 80:80
+        - 9000:9000
+    restart: always
+    volumes:
+        - ./nginx.conf:/etc/nginx/conf.d/default.conf
+        - ./cors.conf.inc:/etc/nginx/conf.d/cors.conf.inc
+        - .:/var/www/html:rw
+    extra_hosts:
+      - host.docker.internal:host-gateway
+#    command:
+#        - rm /etc/nginx/conf.d/default.conf
+    links:
+        - laravel
+
+  laravel:
+    build: .
+    container_name: laravel
+    user: root
+    volumes:
+       - .:/var/www/html:rw
+       - ./shared/etc:/var/www/html/app/etc:rw
+       - ./shared/media:/var/www/html/pub/media:rw
+       - ./shared/static:/var/www/html/pub/static:rw
+       - ./shared/var:/var/www/html/var:rw
+    restart: always
+    extra_hosts:
+      - host.docker.internal:host-gateway
+# windows      - host.docker.internal:172.21.68.18
+    depends_on:
+      - selenoid
+      - ggr
+    links:
+      - selenoid
+      - ggr
+    build:
+      context: .
+      args:
+        PHP_VERSION: 7.1
+
+  selenoid:
+    container_name: selenoid
+    network_mode: bridge
+    image: aerokube/selenoid:latest-release
+    volumes:
+      - "./selenoid-config/selenoid-ggr:/etc/selenoid"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./selenoid-config/selenoid-ggr/video:/opt/selenoid/video"
+      - "./selenoid-config/selenoid-ggr/logs:/opt/selenoid/logs"
+    restart: always
+    extra_hosts:
+      - host.docker.internal:host-gateway
+# windows      - host.docker.internal:172.21.68.18
+    environment:
+      - OVERRIDE_VIDEO_OUTPUT_DIR=./selenoid-config/selenoid-ggr/video
+    command: ["-conf", "/etc/selenoid/browsers.json", "-video-output-dir", "/opt/selenoid/video", "-log-output-dir", "/opt/selenoid/logs", "-limit", "20", "-timeout", "5m"]
+    ports:
+      - "4445:4444"
+
+  chrome:
+    container_name: chrome
+    network_mode: bridge
+    image: selenoid/vnc_chrome:86.0
+
+  ggr:
+    container_name: ggr
+    network_mode: bridge
+    volumes:
+      - "./selenoid-config/selenoid-ggr/grid-router/:/etc/grid-router"
+    restart: always
+    extra_hosts:
+      - host.docker.internal:host-gateway
+# windows      - host.docker.internal:172.21.68.18
+    image: aerokube/ggr:latest-release
+    depends_on:
+      - selenoid
+    links:
+      - selenoid
+    ports:
+      - "4444:4444"
+
+  ggr-ui:
+    container_name: ggr-ui
+    network_mode: bridge
+    volumes:
+      - "./selenoid-config/selenoid-ggr/grid-router/:/etc/grid-router"
+    restart: always
+    extra_hosts:
+      - host.docker.internal:host-gateway
+# windows      - host.docker.internal:172.21.68.18
+    image: aerokube/ggr-ui:latest-release
+    depends_on:
+      - selenoid
+      - ggr
+    links:
+      - selenoid
+    ports:
+      - "8888:8888"
+
+  selenoid-ui:
+    container_name: selenoid-ui
+    network_mode: bridge
+    restart: always
+    extra_hosts:
+      - host.docker.internal:host-gateway
+# windows      - host.docker.internal:172.21.68.18
+    image: aerokube/selenoid-ui:latest-release
+    depends_on:
+      - selenoid
+      - ggr
+      - ggr-ui
+    links:
+      - ggr-ui
+    command: ["--selenoid-uri", "http://ggr-ui:8888"]
+    ports:
+      - "8080:8080"
