@@ -22,7 +22,7 @@ Consulta do histórico dos pacientes (prontuário);
 
 ## Instalação
 
-Em uma pasta do seu computador, digitar no cmd =  git clone https://github.com/vongrafen/medicalSystem
+Em uma pasta do seu computador, digitar no cmd =  git clone https://github.com/lucenarenato
 
 OBS: "Irá fazer dowload do projeto"
 
